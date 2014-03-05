@@ -66,29 +66,4 @@ describe ApiWrapper do
       end
     end
   end
-
-
-  describe '#process' do
-
-    before do
-      redis_queue = double()
-      encoded_request = ['do_something', '1'].to_json
-      $loop_counter = 0
-      # return requets only for first loop rub
-      redis_queue.stub(:pop) do 
-       $loop_counter.zero? ? encoded_request : nil
-      end
-      redis_queue.stub(:commit)
-      ApiCallQueue.any_instance.stub(:redis_queue).and_return(redis_queue)
-      ApiCallQueue.any_instance.stub(:rate_limit_exceeded?).and_return(false)
-      ApiCallQueue.any_instance.stub(:run) do
-        $loop_counter = 1
-      end
-    end
-
-    it 'should run request from queue if it appears and rate limit is not exceeded' do
-      @queue.process
-      $loop_counter.should == 1 
-    end
-  end
 end

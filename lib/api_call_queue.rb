@@ -23,35 +23,11 @@ class ApiCallQueue
     else
       run(method, *args)
     end
-  end
-
-  def process
-    # process queue
-    while obj = redis_queue.pop
-      method_data = JSON.parse(obj)
-      done = false
-      while !done
-        if rate_limit_exceeded?
-          sleep 1
-        else
-          run(method_data.first, *method_data[1..-1])
-          done = true
-        end
-      end
-
-      redis_queue.commit
-    end
-  end
+  end 
 
   def rate_limit_exceeded?
     (call_counter >= @api.requests_limit) && 
       (first_usage + @api.time_limit > Time.now)
-  end
-
-  private
-
-  def enqueue(method, *args)
-    redis_queue.push([method, *args].to_json)
   end
 
   def run(method, *args)
@@ -64,6 +40,20 @@ class ApiCallQueue
     end
 
     results
+  end
+
+  def pop
+    redis_queue.pop(true)
+  end
+
+  def commit
+    redis_queue.commit
+  end
+
+  private
+
+  def enqueue(method, *args)
+    redis_queue.push([method, *args].to_json)
   end 
 
   def increment_api_usage_counter
